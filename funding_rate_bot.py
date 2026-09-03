@@ -1,9 +1,8 @@
 """
-Funding Rate Sinyal Botu - Binance Futures -> Telegram
+Funding Rate Sinyal Botu - Binance Futures -> Telegram (tek seferlik calisir)
 """
 
 import os
-import time
 import requests
 from datetime import datetime
 
@@ -12,7 +11,6 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "BURAYA_CHAT_ID_YAZ")
 
 FUNDING_RATE_THRESHOLD = 0.05
 SYMBOLS = []
-CHECK_INTERVAL_SECONDS = 900
 
 
 def get_all_funding_rates():
@@ -81,16 +79,8 @@ def check_funding_rates():
         print(f"  -> Bildirim gonderildi: {r['symbol']} ({r['funding_rate']:.4f}%)")
 
 
-def main():
-    print("Funding Rate Sinyal Botu baslatildi.")
+if __name__ == "__main__":
     if TELEGRAM_TOKEN == "BURAYA_TOKEN_YAZ":
         print("[UYARI] TELEGRAM_TOKEN ayarlanmamis!")
-        return
-
-    while True:
+    else:
         check_funding_rates()
-        time.sleep(CHECK_INTERVAL_SECONDS)
-
-
-if __name__ == "__main__":
-    main()
