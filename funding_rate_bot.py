@@ -7,8 +7,8 @@ import time
 import requests
 from datetime import datetime
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "BURAYA_TOKEN_YAZ")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "BURAYA_CHAT_ID_YAZ")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "BURAYA_TOKEN_YAZ").strip()
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "BURAYA_CHAT_ID_YAZ").strip()
 
 FUNDING_RATE_THRESHOLD = 0.02
 SYMBOLS = []
@@ -65,7 +65,7 @@ def get_all_funding_rates():
                 results.append(rate_info)
         except Exception as e:
             print(f"[UYARI] {inst_id} icin veri alinamadi: {e}")
-        time.sleep(0.15)  # rate limit'e takilmamak icin ufak bekleme
+        time.sleep(0.15)
     return results
 
 
