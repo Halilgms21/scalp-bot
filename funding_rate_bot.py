@@ -1,5 +1,5 @@
 """
-Funding Rate Sinyal Botu - Binance Futures -> Telegram (tek seferlik calisir)
+Funding Rate Sinyal Botu - Bybit Futures -> Telegram (tek seferlik calisir)
 """
 
 import os
@@ -10,24 +10,32 @@ TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "BURAYA_TOKEN_YAZ")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "BURAYA_CHAT_ID_YAZ")
 
 FUNDING_RATE_THRESHOLD = 0.02
-
 SYMBOLS = []
 
 
 def get_all_funding_rates():
-    url = "https://fapi.binance.com/fapi/v1/premiumIndex"
-    response = requests.get(url, timeout=10)
+    url = "https://api.bybit.com/v5/market/tickers"
+    params = {"category": "linear"}
+    response = requests.get(url, params=params, timeout=10)
     response.raise_for_status()
     data = response.json()
 
+    if data.get("retCode") != 0:
+        raise Exception(f"Bybit API hatasi: {data.get('retMsg')}")
+
     results = []
-    for item in data:
+    for item in data["result"]["list"]:
         symbol = item["symbol"]
+        if not symbol.endswith("USDT"):
+            continue
         if SYMBOLS and symbol not in SYMBOLS:
             continue
-        funding_rate = float(item["lastFundingRate"]) * 100
-        mark_price = float(item["markPrice"])
-        next_funding_time = int(item["nextFundingTime"])
+        funding_rate_str = item.get("fundingRate", "")
+        if not funding_rate_str:
+            continue
+        funding_rate = float(funding_rate_str) * 100
+        mark_price = float(item.get("markPrice", 0))
+        next_funding_time = int(item.get("nextFundingTime", 0))
         results.append({
             "symbol": symbol,
             "funding_rate": funding_rate,
@@ -48,6 +56,8 @@ def send_telegram_message(text: str):
 
 
 def format_next_funding_time(timestamp_ms: int) -> str:
+    if not timestamp_ms:
+        return "bilinmiyor"
     dt = datetime.utcfromtimestamp(timestamp_ms / 1000)
     return dt.strftime("%H:%M UTC")
 
