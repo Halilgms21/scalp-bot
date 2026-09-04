@@ -1,8 +1,9 @@
 """
-Funding Rate Sinyal Botu - Bybit Futures -> Telegram (tek seferlik calisir)
+Funding Rate Sinyal Botu - OKX Futures -> Telegram (tek seferlik calisir)
 """
 
 import os
+import time
 import requests
 from datetime import datetime
 
@@ -13,35 +14,58 @@ FUNDING_RATE_THRESHOLD = 0.02
 SYMBOLS = []
 
 
-def get_all_funding_rates():
-    url = "https://api.bybit.com/v5/market/tickers"
-    params = {"category": "linear"}
+def get_usdt_swap_instruments():
+    url = "https://www.okx.com/api/v5/public/instruments"
+    params = {"instType": "SWAP"}
     response = requests.get(url, params=params, timeout=10)
     response.raise_for_status()
     data = response.json()
+    if data.get("code") != "0":
+        raise Exception(f"OKX instruments hatasi: {data.get('msg')}")
 
-    if data.get("retCode") != 0:
-        raise Exception(f"Bybit API hatasi: {data.get('retMsg')}")
+    instruments = []
+    for item in data["data"]:
+        inst_id = item["instId"]
+        if not inst_id.endswith("-USDT-SWAP"):
+            continue
+        if SYMBOLS and inst_id not in SYMBOLS:
+            continue
+        instruments.append(inst_id)
+    return instruments
+
+
+def get_funding_rate(inst_id: str):
+    url = "https://www.okx.com/api/v5/public/funding-rate"
+    params = {"instId": inst_id}
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+    if data.get("code") != "0" or not data.get("data"):
+        return None
+
+    item = data["data"][0]
+    funding_rate = float(item["fundingRate"]) * 100
+    next_funding_time = int(item.get("nextFundingTime", 0))
+    return {
+        "symbol": inst_id,
+        "funding_rate": funding_rate,
+        "next_funding_time": next_funding_time,
+    }
+
+
+def get_all_funding_rates():
+    instruments = get_usdt_swap_instruments()
+    print(f"{len(instruments)} adet USDT-SWAP coin bulundu, taraniyor...")
 
     results = []
-    for item in data["result"]["list"]:
-        symbol = item["symbol"]
-        if not symbol.endswith("USDT"):
-            continue
-        if SYMBOLS and symbol not in SYMBOLS:
-            continue
-        funding_rate_str = item.get("fundingRate", "")
-        if not funding_rate_str:
-            continue
-        funding_rate = float(funding_rate_str) * 100
-        mark_price = float(item.get("markPrice", 0))
-        next_funding_time = int(item.get("nextFundingTime", 0))
-        results.append({
-            "symbol": symbol,
-            "funding_rate": funding_rate,
-            "mark_price": mark_price,
-            "next_funding_time": next_funding_time,
-        })
+    for inst_id in instruments:
+        try:
+            rate_info = get_funding_rate(inst_id)
+            if rate_info:
+                results.append(rate_info)
+        except Exception as e:
+            print(f"[UYARI] {inst_id} icin veri alinamadi: {e}")
+        time.sleep(0.15)  # rate limit'e takilmamak icin ufak bekleme
     return results
 
 
@@ -82,7 +106,6 @@ def check_funding_rates():
             f"<b>{r['symbol']}</b>\n"
             f"Funding Rate: {r['funding_rate']:.4f}%\n"
             f"{direction}\n"
-            f"Mark Price: {r['mark_price']}\n"
             f"Sonraki Funding: {format_next_funding_time(r['next_funding_time'])}\n"
             f"Bu bir otomatik sinyaldir, yatirim tavsiyesi degildir."
         )
