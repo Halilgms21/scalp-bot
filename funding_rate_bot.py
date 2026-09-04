@@ -10,7 +10,7 @@ from datetime import datetime
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "BURAYA_TOKEN_YAZ").strip()
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "BURAYA_CHAT_ID_YAZ").strip()
 
-FUNDING_RATE_THRESHOLD = 0.02
+FUNDING_RATE_THRESHOLD = 0.05
 SYMBOLS = []
 
 
