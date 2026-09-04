@@ -19,8 +19,8 @@ WATCHLIST = [
 ]
 
 # Esik degerler: oran bu araligin disina cikarsa uyari gonderilir
-HIGH_RATIO_THRESHOLD = 1.8   # longlar cok baskin
-LOW_RATIO_THRESHOLD = 0.55   # shortlar cok baskin
+HIGH_RATIO_THRESHOLD = 3.0  # longlar cok baskin
+LOW_RATIO_THRESHOLD = 0.35  # shortlar cok baskin
 
 
 def get_long_short_ratio(inst_id: str):
